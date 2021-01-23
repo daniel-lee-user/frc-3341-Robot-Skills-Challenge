@@ -14,7 +14,12 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
  * package after creating this project, you must also update the build.gradle file in the project.
  */
 public class Robot extends RobotBase {
-  public void robotInit() {}
+
+  private RobotContainer m_RobotContainer;
+
+  public void robotInit() {
+    m_RobotContainer = new RobotContainer();
+  }
 
   public void disabled() {}
 
