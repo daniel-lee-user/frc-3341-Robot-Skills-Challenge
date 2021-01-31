@@ -33,6 +33,7 @@ public class DriveTrain extends SubsystemBase {
   private WPI_TalonSRX left = new WPI_TalonSRX(RobotMap.leftMotorPort);
   private WPI_TalonSRX right = new WPI_TalonSRX(RobotMap.rightMotorPort);
   private static DriveTrain drive;
+  private double circumference = 2 * Math.PI * Units.inchesToMeters(RobotMap.radius);
   
   DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(Units.inchesToMeters(RobotMap.trackWidth));
 
@@ -40,8 +41,8 @@ public class DriveTrain extends SubsystemBase {
 
   Pose2d pose;
 
-  PIDController leftPID = new PIDController(9, 0, 0); //replace with tested values
-  PIDController rightPID = new PIDController(9, 0, 0);
+  PIDController leftPID = new PIDController(0.807, 0, 0); //replaced with tested values (0.807, green robot)
+  PIDController rightPID = new PIDController(0.807, 0, 0);
 
   DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(getHeading()); //add optional pose2D starting location after getHeading as parameter
 
@@ -64,7 +65,7 @@ public class DriveTrain extends SubsystemBase {
 
   public void setOutput(double leftVolts, double rightVolts) {
     left.set(leftVolts/12);
-    right.set(rightVolts/12);
+    right.set(rightVolts/12); // negative for green chassis, change for other robots
   }
 
   public void tankDrive(double leftPow, double rightPow) {
@@ -74,11 +75,24 @@ public class DriveTrain extends SubsystemBase {
   public Rotation2d getHeading() {
     return Rotation2d.fromDegrees(-navX.getAngle());
   }
-
-  public DifferentialDriveWheelSpeeds getSpeeds() {
+  public void resetOdometry(Pose2d pose) {
+    left.setSelectedSensorPosition(0, 0, 10);
+    right.setSelectedSensorPosition(0, 0, 10);  
+    odometry.resetPosition(pose, navX.getRotation2d());
+  }
+  public DifferentialDriveWheelSpeeds getWheelSpeeds() {
     return new DifferentialDriveWheelSpeeds(
-      left.getSelectedSensorVelocity() * 10.0/4096 * 2 * Math.PI * Units.inchesToMeters(RobotMap.radius),
-      right.getSelectedSensorVelocity() * 10.0/4096 * 2 * Math.PI * Units.inchesToMeters(RobotMap.radius)
+      right.getSelectedSensorVelocity() * 10.0 * circumference / 4096,
+      left.getSelectedSensorVelocity()* 10.0 * circumference / 4096);
+  }
+  public double getRightDistance() {
+    return (
+      right.getSelectedSensorPosition() * circumference / (4096 * RobotMap.gearRatio)
+      );
+  }
+  public double getLeftDistance() {
+    return (
+      left.getSelectedSensorPosition() * circumference / (4096 * RobotMap.gearRatio)
       );
   }
   
@@ -103,7 +117,7 @@ public class DriveTrain extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    pose = odometry.update(getHeading(), getSpeeds().leftMetersPerSecond, getSpeeds().rightMetersPerSecond);
-    tankDrive(RobotContainer.returnLeftJoy().getY(), RobotContainer.returnRightJoy().getY()); //tankdrive
+    pose = odometry.update(getHeading(), getRightDistance(), getLeftDistance());
+    tankDrive(-RobotContainer.returnLeftJoy().getY(), -RobotContainer.returnRightJoy().getY()); //tankdrive
   }
 }

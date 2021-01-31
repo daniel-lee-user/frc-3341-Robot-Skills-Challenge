@@ -4,15 +4,25 @@
 
 package frc.robot;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.controller.RamseteController;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.trajectory.Trajectory;
-import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
+import edu.wpi.first.wpilibj.geometry.Translation2d;
+import edu.wpi.first.wpilibj.trajectory.*;
+import java.nio.file.Path;
+import edu.wpi.first.wpilibj.controller.*;
+
+import edu.wpi.first.wpilibj.Filesystem;
+
+import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.util.Units;
 //import frc.robot.commands.*;
@@ -68,17 +78,45 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-      TrajectoryConfig config = new TrajectoryConfig(Units.feetToMeters(2), Units.feetToMeters(2)); //change later
+      var autoVoltageConstraint =
+      new DifferentialDriveVoltageConstraint(
+          new SimpleMotorFeedforward(RobotMap.kS, RobotMap.kV, RobotMap.kA),
+          m_drive.getKinematics(),
+          10);
+      TrajectoryConfig config = new TrajectoryConfig(Units.feetToMeters(2), Units.feetToMeters(2));
+      // max velocity and max acceleration, may not be necessary with pathweaver
       config.setKinematics(m_drive.getKinematics());
+      config.addConstraint(autoVoltageConstraint);
       
       Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
-        Arrays.asList(new Pose2d(), new Pose2d(1.0, 0, new Rotation2d())), config
+        // Start at the origin facing the +X direction
+        new Pose2d(0, 0, new Rotation2d(0)),
+        // Pass through these two interior waypoints, making an 's' curve path
+        List.of(
+            new Translation2d(1, 1),
+            new Translation2d(2, -1)
+        ),
+        // End 3 meters straight ahead of where we started, facing forward
+        new Pose2d(3, 0, new Rotation2d(0)),
+        // Pass config
+        config
       );
       /* 
-      moves 1 meter forward, empty pose2d = 0,0
-      angle is still the same (new rotation2d)
       use https://docs.wpilib.org/en/stable/docs/software/wpilib-tools/pathweaver/integrating-robot-program.html
       for instructions on how to import paths created from pathweaver
+      make sure to create pathweaver project in directory of the project you are working on
+      */
+      
+      //untested pathweaver code
+      /*
+      String trajectoryJSON = "paths/secondpath.wpilib.json";
+      Trajectory trajectory = new Trajectory();
+      try {
+        Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+        trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+      } catch (IOException ex) {
+        DriverStation.reportError("unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
+      }
       */
       RamseteCommand command = new RamseteCommand(
         trajectory,
@@ -86,12 +124,15 @@ public class RobotContainer {
         new RamseteController(2, 0.7), // paramteters recommended by documentation/video
         m_drive.getFeedForward(),
         m_drive.getKinematics(),
-        m_drive::getSpeeds,
+        m_drive::getWheelSpeeds,
         m_drive.returnRightPID(),
         m_drive.returnLeftPID(),
         m_drive::setOutput,
         m_drive
       );
-      return command;
+
+      m_drive.resetOdometry(trajectory.getInitialPose());
+
+      return command.andThen(() -> m_drive.setOutput(0, 0));
   }
 }
