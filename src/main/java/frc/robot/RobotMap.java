@@ -10,15 +10,17 @@ public class RobotMap {
     public static int rightMotorPort = 3;
     
     public static int navXPort = 0;
-    public static double gearRatio = 3;
-    public static int radius = 3; //inches, change later
+    public static double gearRatio = 1;
+    public static double radius = 1.929133; //inches, change later
 
     public static int leftJoy = 0;
     
-    public static double kS = 0.767;
-    public static double kV = 0.0949; //change after running frc characterization data logger
-    public static double kA = 0.0177;
+    public static double kS = 1.55;
+    public static double kV = 4.93; //change after running frc characterization data logger
+    public static double kA = 0.588;
+
+    public static double kP = 1.65;
 
     public static int rightJoy = 1;
-    public static double trackWidth = 1.37103; //inches, replace this with real track width (distance between the wheels) later
+    public static double trackWidth = 22.835; //inches, replace this with real track width (distance between the wheels) later
 }

@@ -33,7 +33,7 @@ public class DriveTrain extends SubsystemBase {
   private WPI_TalonSRX left = new WPI_TalonSRX(RobotMap.leftMotorPort);
   private WPI_TalonSRX right = new WPI_TalonSRX(RobotMap.rightMotorPort);
   private static DriveTrain drive;
-  private double circumference = 2 * Math.PI * Units.inchesToMeters(RobotMap.radius);
+  private double circumference = 2 * Math.PI * Units.inchesToMeters(RobotMap.radius); //in meters
   
   DifferentialDriveKinematics kinematics = new DifferentialDriveKinematics(Units.inchesToMeters(RobotMap.trackWidth));
 
@@ -41,19 +41,22 @@ public class DriveTrain extends SubsystemBase {
 
   Pose2d pose;
 
-  PIDController leftPID = new PIDController(0.807, 0, 0); //replaced with tested values (0.807, green robot)
-  PIDController rightPID = new PIDController(0.807, 0, 0);
+  PIDController leftPID = new PIDController(RobotMap.kP, 0, 0); //replaced with tested values (0.807, green robot)
+  PIDController rightPID = new PIDController(RobotMap.kP, 0, 0);
 
-  DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(getHeading()); //add optional pose2D starting location after getHeading as parameter
+  DifferentialDriveOdometry odometry = new DifferentialDriveOdometry(navX.getRotation2d()); //add optional pose2D starting location after getHeading as parameter
 
   public DriveTrain() {
     navX.zeroYaw();
+    //zeroHeading();
     //set up motors
     right.configFactoryDefault();
     left.configFactoryDefault();
     right.setInverted(true);
     right.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10);
     left.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 10);
+    //left.setSelectedSensorPosition(0, 0, 10);
+    //right.setSelectedSensorPosition(0, 0, 10); 
   }
 
   public DriveTrain getInstance() {
@@ -64,8 +67,11 @@ public class DriveTrain extends SubsystemBase {
   }
 
   public void setOutput(double leftVolts, double rightVolts) {
-    left.set(leftVolts/12);
-    right.set(rightVolts/12); // negative for green chassis, change for other robots
+    left.setVoltage(leftVolts);
+    right.setVoltage(rightVolts); // negative for green chassis, change for other robots
+    System.out.println("distance right: " + getRightDistance());
+    System.out.println("distance left: " + getRightDistance());
+    System.out.println("position: " + returnPose());
   }
 
   public void tankDrive(double leftPow, double rightPow) {
@@ -77,7 +83,8 @@ public class DriveTrain extends SubsystemBase {
   }
   public void resetOdometry(Pose2d pose) {
     left.setSelectedSensorPosition(0, 0, 10);
-    right.setSelectedSensorPosition(0, 0, 10);  
+    right.setSelectedSensorPosition(0, 0, 10); 
+
     odometry.resetPosition(pose, navX.getRotation2d());
   }
   public DifferentialDriveWheelSpeeds getWheelSpeeds() {
@@ -85,14 +92,17 @@ public class DriveTrain extends SubsystemBase {
       right.getSelectedSensorVelocity() * 10.0 * circumference / 4096,
       left.getSelectedSensorVelocity()* 10.0 * circumference / 4096);
   }
-  public double getRightDistance() {
+  public void zeroHeading() {
+    navX.reset();
+  }
+  public double getRightDistance() { //encoder positions are inverted for blue robot
     return (
-      right.getSelectedSensorPosition() * circumference / (4096 * RobotMap.gearRatio)
+      -right.getSelectedSensorPosition() * circumference / (4096)
       );
   }
   public double getLeftDistance() {
     return (
-      left.getSelectedSensorPosition() * circumference / (4096 * RobotMap.gearRatio)
+      -left.getSelectedSensorPosition() * circumference / (4096)
       );
   }
   
@@ -111,13 +121,13 @@ public class DriveTrain extends SubsystemBase {
   }
 
   public Pose2d returnPose() {
-    return pose;
+    return odometry.getPoseMeters();
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    pose = odometry.update(getHeading(), getRightDistance(), getLeftDistance());
+    odometry.update(navX.getRotation2d(), getRightDistance(), getLeftDistance());
     tankDrive(-RobotContainer.returnLeftJoy().getY(), -RobotContainer.returnRightJoy().getY()); //tankdrive
   }
 }

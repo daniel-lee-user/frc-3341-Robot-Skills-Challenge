@@ -78,6 +78,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+    /*
       var autoVoltageConstraint =
       new DifferentialDriveVoltageConstraint(
           new SimpleMotorFeedforward(RobotMap.kS, RobotMap.kV, RobotMap.kA),
@@ -94,10 +95,11 @@ public class RobotContainer {
         // Pass through these two interior waypoints, making an 's' curve path
         List.of(
             new Translation2d(1, 1),
-            new Translation2d(2, -1)
+            new Translation2d(2, -1),
+            new Translation2d(3, -1)
         ),
-        // End 3 meters straight ahead of where we started, facing forward
-        new Pose2d(3, 0, new Rotation2d(0)),
+        // End 4 meters straight ahead of where we started, facing forward
+        new Pose2d(4, 0, new Rotation2d(0)),
         // Pass config
         config
       );
@@ -106,9 +108,10 @@ public class RobotContainer {
       for instructions on how to import paths created from pathweaver
       make sure to create pathweaver project in directory of the project you are working on
       */
-      
-      //untested pathweaver code
-      /*
+      ///*
+      //tested pathweaver import code 
+      //make sure deploy has directory paths inside of it, put all path.json into paths directory
+      //having too much waypoints causes jittering
       String trajectoryJSON = "paths/secondpath.wpilib.json";
       Trajectory trajectory = new Trajectory();
       try {
@@ -117,7 +120,8 @@ public class RobotContainer {
       } catch (IOException ex) {
         DriverStation.reportError("unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
       }
-      */
+      //*/
+      
       RamseteCommand command = new RamseteCommand(
         trajectory,
         m_drive::returnPose,
