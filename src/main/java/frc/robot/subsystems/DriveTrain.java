@@ -97,12 +97,12 @@ public class DriveTrain extends SubsystemBase {
   }
   public double getRightDistance() { //encoder positions are inverted for blue robot
     return (
-      right.getSelectedSensorPosition() * circumference / (4096)
+      -right.getSelectedSensorPosition() * circumference / (4096)
       );
   }
   public double getLeftDistance() {
     return (
-      left.getSelectedSensorPosition() * circumference / (4096)
+      -left.getSelectedSensorPosition() * circumference / (4096)
       );
   }
   
