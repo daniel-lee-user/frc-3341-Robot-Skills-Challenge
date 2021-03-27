@@ -112,7 +112,7 @@ public class RobotContainer {
       //tested pathweaver import code 
       //make sure deploy has directory paths inside of it, put all path.json into paths directory
       //having too much waypoints causes jittering
-      String trajectoryJSON = "paths/output/slalom.wpilib.json";
+      String trajectoryJSON = "paths/output/barrel_0.wpilib.json";
       Trajectory trajectory = new Trajectory();
       try {
         Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
